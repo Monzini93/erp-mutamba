@@ -1,0 +1,130 @@
+Documentação Técnica – Sistema ERP Mutamba Cosméticos
+Versão: 1.0.0
+Data: 05 de Julho de 2025
+
+1. Visão Geral do Projeto
+1.1. Objetivo
+Desenvolver um sistema de gestão (ERP) completo, intuitivo e responsivo, voltado para a indústria cosmética com atuação nacional e foco em exportação. O sistema visa substituir processos manuais e planilhas descentralizadas, centralizando o controle de estoque de matérias-primas, gestão de embalagens, ordens de produção, e rastreabilidade completa dos processos.
+
+1.2. Escopo da Versão Atual
+A versão atual (1.0.0) contempla a estrutura fundamental da aplicação, incluindo:
+
+Autenticação de usuários.
+
+Dashboard com indicadores visuais.
+
+Módulo de Cadastro de Produtos com integração em tempo real ao banco de dados.
+
+Estrutura para futuros módulos (Estoque, Produção, etc.).
+
+Processo de build e deploy automatizado.
+
+2. Arquitetura e Tecnologias
+O sistema foi construído como uma Single Page Application (SPA), utilizando um conjunto de tecnologias modernas para garantir performance, escalabilidade e manutenibilidade.
+
+Frontend (Interface do Usuário):
+
+React.js: Biblioteca JavaScript para construir interfaces de usuário reativas e componentizadas.
+
+Vite: Ferramenta de build e servidor de desenvolvimento extremamente rápido, que oferece uma experiência de desenvolvimento otimizada.
+
+Tailwind CSS: Framework de CSS utility-first para a criação de designs modernos e responsivos de forma rápida.
+
+Lucide React: Biblioteca de ícones SVG, leve e customizável.
+
+Backend e Banco de Dados (BaaS - Backend as a Service):
+
+Google Firebase: Plataforma utilizada para gerenciar toda a infraestrutura de backend.
+
+Firebase Authentication: Serviço para gerenciar o login de usuários com e-mail e senha, de forma segura.
+
+Cloud Firestore: Banco de dados NoSQL, em tempo real e baseado em documentos, utilizado para armazenar todos os dados da aplicação (produtos, estoque, clientes, etc.).
+
+Hospedagem e Deploy:
+
+GitHub: Plataforma para controle de versão do código-fonte.
+
+Vercel: Plataforma de nuvem para deploy contínuo e hospedagem do frontend, integrada diretamente ao repositório do GitHub.
+
+3. Guia de Instalação e Execução Local
+Siga estes passos para configurar e executar o projeto no seu computador.
+
+3.1. Pré-requisitos
+Node.js: Versão LTS. Baixe em nodejs.org.
+
+Git: Baixe em git-scm.com. Durante a instalação, na tela "Adjusting your PATH environment", selecione a opção "Git from the command line and also from 3rd-party software".
+
+VS Code: Editor de código recomendado.
+
+3.2. Configuração do Ambiente
+Criar o projeto Firebase:
+
+Acesse o Console do Firebase e crie um novo projeto.
+
+Registre um novo aplicativo da web (</>) para obter as chaves de configuração (firebaseConfig).
+
+No menu "Authentication", ative o provedor de login "E-mail/senha".
+
+Clonar e Instalar o Projeto:
+
+Abra seu terminal e clone o repositório do GitHub:
+
+git clone https://github.com/Monzini93/erp-mutamba.git
+
+Entre na pasta do projeto:
+
+cd erp-mutamba
+
+Instale todas as dependências necessárias:
+
+npm install
+
+Configurar Variáveis de Ambiente:
+
+Na raiz do projeto, crie um arquivo chamado .env.local.
+
+Cole suas chaves do Firebase (obtidas no passo 1) neste arquivo, no seguinte formato:
+
+VITE_API_KEY=SUA_CHAVE_API_AQUI
+VITE_AUTH_DOMAIN=SEU_DOMINIO_AQUI
+VITE_PROJECT_ID=SEU_ID_DE_PROJETO_AQUI
+VITE_STORAGE_BUCKET=SEU_STORAGE_BUCKET_AQUI
+VITE_MESSAGING_SENDER_ID=SEU_SENDER_ID_AQUI
+VITE_APP_ID=SEU_APP_ID_AQUI
+
+3.3. Executar o Projeto
+Com tudo configurado, inicie o servidor de desenvolvimento:
+
+npm run dev
+
+O site estará disponível em http://localhost:5173.
+
+4. Guia de Deploy (Publicação na Vercel)
+Enviar para o GitHub: Certifique-se de que todo o seu código local está atualizado no seu repositório do GitHub.
+
+Criar Conta na Vercel: Acesse vercel.com e crie uma conta, conectando-a ao seu GitHub.
+
+Importar Projeto: No painel da Vercel, clique em "Add New..." -> "Project" e importe o repositório erp-mutamba.
+
+Configurar Variáveis de Ambiente: Na tela de configuração do projeto na Vercel, expanda a seção "Environment Variables" e adicione as mesmas 6 chaves VITE_... que você configurou no seu arquivo .env.local.
+
+Deploy: Clique no botão "Deploy". A Vercel irá construir e publicar seu site, fornecendo um link público ao final.
+
+5. Estrutura do Código
+public/: Contém arquivos estáticos, como o logo.png, que são servidos diretamente.
+
+src/: Contém todo o código-fonte da aplicação React.
+
+App.jsx: O componente principal que organiza todo o layout e a lógica de navegação. É o coração da aplicação.
+
+main.jsx: O ponto de entrada da aplicação, que renderiza o componente App na página HTML.
+
+index.css: Arquivo de estilos globais (atualmente vazio, pois usamos Tailwind CSS).
+
+.env.local: Arquivo para armazenar as chaves secretas do Firebase (não é enviado para o GitHub).
+
+index.html: A única página HTML do projeto, onde a aplicação React é montada.
+
+vite.config.js: Arquivo de configuração do Vite.
+
+package.json: Lista todas as dependências do projeto e os scripts (como npm run dev).

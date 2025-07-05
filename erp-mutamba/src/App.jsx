@@ -358,7 +358,7 @@ const AppLayout = () => {
             <aside className="flex flex-col w-64 bg-gray-800 text-gray-300">
                 <div className="flex items-center justify-center h-20 p-4 border-b border-gray-700">
                     {/* LOGO NA BARRA LATERAL */}
-                    <img src="/logo-sidebar.png" alt="Logo Mutamba" className="h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/150x50/1F2937/FFFFFF?text=Mutamba'; }} />
+                    <img src="/logo.png" alt="Logo Mutamba" className="h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/150x50/1F2937/FFFFFF?text=Mutamba'; }} />
                 </div>
                 <nav className="flex-1 px-2 py-4 space-y-1">
                     {navItems.map(item => (

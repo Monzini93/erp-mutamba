@@ -96,25 +96,6 @@ const Input = ({ type = 'text', placeholder, value, onChange, className = '' }) 
     />
 );
 
-// --- LOGO SVG ---
-const MutambaLogo = () => (
-    <svg width="180" height="60" viewBox="0 0 180 60" className="mx-auto">
-        <defs>
-            <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" style={{ stopColor: '#fde047', stopOpacity: 1 }} />
-                <stop offset="100%" style={{ stopColor: '#facc15', stopOpacity: 1 }} />
-            </linearGradient>
-        </defs>
-        <path d="M90 0 C80 15, 80 30, 90 40 C100 30, 100 15, 90 0 Z" fill="url(#logo-gradient)" />
-        <text x="90" y="50" fontFamily="Georgia, serif" fontSize="14" fill="#14B8A6" textAnchor="middle">
-            Mutamba
-        </text>
-        <text x="90" y="62" fontFamily="sans-serif" fontSize="8" fill="#5EEAD4" textAnchor="middle" letterSpacing="1">
-            COSMETICS
-        </text>
-    </svg>
-);
-
 
 // --- TELA DE LOGIN (ATUALIZADA) ---
 const LoginPage = () => {
@@ -145,7 +126,8 @@ const LoginPage = () => {
         <div className="flex items-center justify-center h-screen bg-gray-900 font-sans">
             <div className="w-full max-w-sm p-8 space-y-8 bg-gray-800 rounded-xl shadow-2xl">
                 <div className="text-center">
-                    <MutambaLogo />
+                    {/* LOGO NA TELA DE LOGIN */}
+                    <img src="/logo.png" alt="Logo Mutamba Cosmetics" className="mx-auto h-20 w-auto" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/180x60/111827/FFFFFF?text=Mutamba'; }} />
                     <p className="mt-4 text-center text-sm text-gray-400">
                         Faça login para continuar.
                     </p>
@@ -375,7 +357,8 @@ const AppLayout = () => {
         <div className="flex h-screen bg-gray-100 font-sans">
             <aside className="flex flex-col w-64 bg-gray-800 text-gray-300">
                 <div className="flex items-center justify-center h-20 p-4 border-b border-gray-700">
-                    <img src="/logo-cosmetika.png" alt="Logo Cosmetika" className="h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/150x50/1F2937/FFFFFF?text=Cosmetika'; }} />
+                    {/* LOGO NA BARRA LATERAL */}
+                    <img src="/logo-sidebar.png" alt="Logo Mutamba" className="h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/150x50/1F2937/FFFFFF?text=Mutamba'; }} />
                 </div>
                 <nav className="flex-1 px-2 py-4 space-y-1">
                     {navItems.map(item => (
@@ -455,5 +438,3 @@ const Root = () => {
     // Agora, o sistema mostra a LoginPage se não houver usuário logado.
     return user ? <AppLayout /> : <LoginPage />;
 };
-// --- EXPORTAÇÃO DO COMPONENTE PRINCIPAL ---
-export { App, AuthProvider, useAuth, LoginPage, DashboardPage, CadastrosPage, AppLayout, MutambaLogo, Card, Button, Input, EnvVarError };

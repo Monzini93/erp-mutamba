@@ -124,7 +124,44 @@ const LoginPage = () => {
                     <p className="mt-4 text-center text-sm text-gray-400">Faça login para continuar.</p>
                 </div>
                 <form onSubmit={handleLogin} className="space-y-6">
-                    {/* Campos de Input e Botão */}
+                    <Input
+                        id="email"
+                        type="email"
+                        placeholder="Seu e-mail"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <Input
+                        id="password"
+                        type="password"
+                        placeholder="Sua senha"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                            <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500 rounded" />
+                            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">
+                                Lembrar-me
+                            </label>
+                        </div>
+                        <div className="text-sm">
+                            <a href="#" className="font-medium text-blue-500 hover:text-blue-400">
+                                Esqueceu a senha?
+                            </a>
+                        </div>
+                    </div>
+
+                    {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+
+                    <div>
+                        <Button type="submit" variant="primary" className="w-full py-2.5" disabled={isLoggingIn}>
+                            {isLoggingIn ? 'Entrando...' : 'Entrar'}
+                        </Button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -303,3 +340,5 @@ const Root = () => {
     if (loading) return <div className="flex items-center justify-center h-screen bg-gray-900"><p className="text-white">Carregando...</p></div>;
     return user ? <AppLayout /> : <LoginPage />;
 };
+// --- EXPORTAÇÃO DO COMPONENTE PRINCIPAL ---
+export { App, AuthProvider, useAuth, LoginPage, MateriasPrimasPage, AppLayout, Card, CardHeader, CardContent, Button, Input, Modal, EnvVarError };

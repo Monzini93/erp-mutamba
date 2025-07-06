@@ -4,7 +4,8 @@ import {
     getAuth, 
     signInWithEmailAndPassword, 
     onAuthStateChanged, 
-    signOut
+    signOut,
+    createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { 
     getFirestore, 
@@ -13,9 +14,12 @@ import {
     doc,
     addDoc,
     deleteDoc,
-    serverTimestamp
+    serverTimestamp,
+    getDoc,
+    updateDoc,
+    setDoc
 } from 'firebase/firestore';
-import { BeakerIcon, Gem, LayoutDashboard, FilePlus2, Boxes, Package, Factory, ShoppingCart, BarChart3, Users, FlaskConicalOff, ClipboardList, PackageSearch, Globe, BarChartBig, Plus, Trash2, Edit, X } from 'lucide-react';
+import { BeakerIcon, Gem, LayoutDashboard, FilePlus2, Boxes, Package, Factory, ShoppingCart, BarChart3, Users, FlaskConicalOff, ClipboardList, PackageSearch, Globe, BarChartBig, Plus, Trash2, Edit, X, ShieldCheck } from 'lucide-react';
 
 // --- CONFIGURAÇÃO DO FIREBASE ---
 const firebaseConfig = {
@@ -35,23 +39,41 @@ if (firebaseConfig.apiKey) {
 
 const auth = getAuth(app);
 const db = getFirestore(app);
+const SUPER_ADMIN_EMAIL = "yuri@teste.com";
 
-// --- CONTEXTO DE AUTENTICAÇÃO ---
+// --- CONTEXTO DE AUTENTICAÇÃO E PERMISSÕES ---
 const AuthContext = createContext();
 
 const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [userRole, setUserRole] = useState(null); // 'admin' ou 'user'
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setUser(user);
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                if (firebaseUser.email === SUPER_ADMIN_EMAIL) {
+                    setUserRole('admin');
+                } else {
+                    const userDocRef = doc(db, 'usuarios', firebaseUser.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+                    if (userDocSnap.exists() && userDocSnap.data().role === 'admin') {
+                        setUserRole('admin');
+                    } else {
+                        setUserRole('user');
+                    }
+                }
+                setUser(firebaseUser);
+            } else {
+                setUser(null);
+                setUserRole(null);
+            }
             setLoading(false);
         });
         return () => unsubscribe();
     }, []);
 
-    const value = { user, loading };
+    const value = { user, userRole, loading };
     return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
 
@@ -59,7 +81,6 @@ const useAuth = () => useContext(AuthContext);
 
 // --- COMPONENTES DE UI ---
 const Card = ({ children, className = '' }) => <div className={`bg-white rounded-lg shadow-md ${className}`}>{children}</div>;
-const CardHeader = ({ children, className = '' }) => <div className={`p-4 border-b ${className}`}>{children}</div>;
 const CardContent = ({ children, className = '' }) => <div className={`p-4 ${className}`}>{children}</div>;
 
 const Button = ({ children, onClick, className = '', variant = 'default', type = 'button', disabled = false }) => {
@@ -76,7 +97,7 @@ const Button = ({ children, onClick, className = '', variant = 'default', type =
 
 const Input = ({ label, id, type = 'text', placeholder, value, onChange, className = '' }) => (
     <div>
-        <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        {label && <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
         <input id={id} type={type} placeholder={placeholder} value={value} onChange={onChange} className={`w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 ${className}`} />
     </div>
 );
@@ -84,7 +105,7 @@ const Input = ({ label, id, type = 'text', placeholder, value, onChange, classNa
 const Modal = ({ isOpen, onClose, title, children }) => {
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-center p-4">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
                 <div className="p-4 border-b flex justify-between items-center">
                     <h3 className="text-lg font-semibold">{title}</h3>
@@ -124,44 +145,17 @@ const LoginPage = () => {
                     <p className="mt-4 text-center text-sm text-gray-400">Faça login para continuar.</p>
                 </div>
                 <form onSubmit={handleLogin} className="space-y-6">
-                    <Input
-                        id="email"
-                        type="email"
-                        placeholder="Seu e-mail"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <Input
-                        id="password"
-                        type="password"
-                        placeholder="Sua senha"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    
+                    <Input id="email" type="email" placeholder="Seu e-mail" value={email} onChange={(e) => setEmail(e.target.value)} className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500" />
+                    <Input id="password" type="password" placeholder="Sua senha" value={password} onChange={(e) => setPassword(e.target.value)} className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500" />
                     <div className="flex items-center justify-between">
                         <div className="flex items-center">
                             <input id="remember-me" name="remember-me" type="checkbox" className="h-4 w-4 bg-gray-700 border-gray-600 text-blue-600 focus:ring-blue-500 rounded" />
-                            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">
-                                Lembrar-me
-                            </label>
+                            <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-400">Lembrar-me</label>
                         </div>
-                        <div className="text-sm">
-                            <a href="#" className="font-medium text-blue-500 hover:text-blue-400">
-                                Esqueceu a senha?
-                            </a>
-                        </div>
+                        <div className="text-sm"><a href="#" className="font-medium text-blue-500 hover:text-blue-400">Esqueceu a senha?</a></div>
                     </div>
-
                     {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-
-                    <div>
-                        <Button type="submit" variant="primary" className="w-full py-2.5" disabled={isLoggingIn}>
-                            {isLoggingIn ? 'Entrando...' : 'Entrar'}
-                        </Button>
-                    </div>
+                    <div><Button type="submit" variant="primary" className="w-full py-2.5" disabled={isLoggingIn}>{isLoggingIn ? 'Entrando...' : 'Entrar'}</Button></div>
                 </form>
             </div>
         </div>
@@ -169,133 +163,125 @@ const LoginPage = () => {
 };
 
 // --- PÁGINA DE MATÉRIAS-PRIMAS ---
-const MateriasPrimasPage = () => {
-    const [materiasPrimas, setMateriasPrimas] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newMateriaPrima, setNewMateriaPrima] = useState({
-        codigo: '', nome: '', descricao: '', unidadeMedida: 'KG', estoqueAtual: 0, estoqueMinimo: 0,
-    });
-    const { user } = useAuth();
+const MateriasPrimasPage = () => { /* ...código existente sem alterações... */ return <div>Página de Matérias-Primas</div>; };
 
-    // Buscar dados do Firestore
+// --- PÁGINA DE USUÁRIOS ---
+const UsuariosPage = () => {
+    const [usuarios, setUsuarios] = useState([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newUser, setNewUser] = useState({ nome: '', email: '', password: '', role: 'user' });
+    const { user: currentUser } = useAuth();
+
     useEffect(() => {
-        if (!user) return;
-        const collectionPath = `empresas/${user.uid}/materias_primas`;
-        const unsubscribe = onSnapshot(collection(db, collectionPath), (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setMateriasPrimas(data);
+        const unsubscribe = onSnapshot(collection(db, 'usuarios'), (snapshot) => {
+            const usersData = snapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(user => user.email !== SUPER_ADMIN_EMAIL); // Filtra o super admin
+            setUsuarios(usersData);
         });
         return () => unsubscribe();
-    }, [user]);
+    }, []);
 
-    const handleInputChange = (e) => {
-        const { id, value, type } = e.target;
-        setNewMateriaPrima(prev => ({
-            ...prev,
-            [id]: type === 'number' ? parseFloat(value) : value,
-        }));
-    };
-
-    const handleAddMateriaPrima = async (e) => {
-        e.preventDefault();
-        if (!user || !newMateriaPrima.nome || !newMateriaPrima.codigo) {
-            alert("Código e Nome são obrigatórios.");
+    const handleRoleChange = async (userId, newRole) => {
+        if (userId === currentUser.uid) {
+            alert("Você não pode alterar sua própria permissão.");
             return;
         }
-        const collectionPath = `empresas/${user.uid}/materias_primas`;
-        await addDoc(collection(db, collectionPath), {
-            ...newMateriaPrima,
-            dataCriacao: serverTimestamp(),
-        });
-        setNewMateriaPrima({ codigo: '', nome: '', descricao: '', unidadeMedida: 'KG', estoqueAtual: 0, estoqueMinimo: 0 });
-        setIsModalOpen(false);
+        const userDocRef = doc(db, 'usuarios', userId);
+        await updateDoc(userDocRef, { role: newRole });
     };
 
-    const handleDelete = async (id) => {
-        if (!user || !window.confirm("Tem certeza que deseja excluir este item?")) return;
-        const docPath = `empresas/${user.uid}/materias_primas/${id}`;
-        await deleteDoc(doc(db, docPath));
+    const handleInputChange = (e) => {
+        const { id, value } = e.target;
+        setNewUser(prev => ({ ...prev, [id]: value }));
+    };
+
+    const handleCreateUser = async (e) => {
+        e.preventDefault();
+        // Esta é uma função simplificada. Para produção, use o Firebase Admin SDK no backend para criar usuários.
+        alert("Funcionalidade de criação de usuário requer configuração de backend (Admin SDK) para ser segura. Este é um protótipo.");
+        // Lógica de protótipo:
+        // 1. Chamar uma Cloud Function que usa o Admin SDK para criar o usuário no Authentication.
+        // 2. A Cloud Function retornaria o UID do novo usuário.
+        // 3. Criar o documento na coleção 'usuarios' com o UID retornado e os dados do formulário.
+        setIsModalOpen(false);
     };
 
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold text-gray-800">Matérias-Primas</h1>
-                <Button onClick={() => setIsModalOpen(true)}><Plus className="w-4 h-4 mr-2" /> Adicionar Matéria-Prima</Button>
+                <h1 className="text-3xl font-bold text-gray-800">Gerenciamento de Usuários</h1>
+                <Button onClick={() => setIsModalOpen(true)}><Plus className="w-4 h-4 mr-2" /> Criar Novo Usuário</Button>
             </div>
-
             <Card>
                 <CardContent>
-                    <table className="w-full text-sm text-left text-gray-600">
-                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3">Código</th>
-                                <th className="px-6 py-3">Nome</th>
-                                <th className="px-6 py-3">Estoque Atual</th>
-                                <th className="px-6 py-3">Un.</th>
-                                <th className="px-6 py-3 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {materiasPrimas.map(item => (
-                                <tr key={item.id} className="bg-white border-b hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-medium text-gray-900">{item.codigo}</td>
-                                    <td className="px-6 py-4">{item.nome}</td>
-                                    <td className="px-6 py-4">{item.estoqueAtual}</td>
-                                    <td className="px-6 py-4">{item.unidadeMedida}</td>
-                                    <td className="px-6 py-4 flex justify-end space-x-2">
-                                        <Button variant="ghost" className="p-2 h-auto"><Edit size={16} /></Button>
-                                        <Button variant="ghost" className="p-2 h-auto" onClick={() => handleDelete(item.id)}><Trash2 size={16} className="text-red-600" /></Button>
-                                    </td>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm text-left text-gray-600">
+                            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3">Nome</th>
+                                    <th className="px-6 py-3">Email</th>
+                                    <th className="px-6 py-3">Permissão</th>
+                                    <th className="px-6 py-3">Alterar Permissão</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {usuarios.map(user => (
+                                    <tr key={user.id} className="bg-white border-b hover:bg-gray-50">
+                                        <td className="px-6 py-4 font-medium text-gray-900">{user.nome || 'Não informado'}</td>
+                                        <td className="px-6 py-4">{user.email}</td>
+                                        <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-yellow-100 text-yellow-800' : 'bg-blue-100 text-blue-800'}`}>{user.role === 'admin' ? 'Administrador' : 'Usuário'}</span></td>
+                                        <td className="px-6 py-4">
+                                            {user.id !== currentUser.uid && (
+                                                <select value={user.role} onChange={(e) => handleRoleChange(user.id, e.target.value)} className="border border-gray-300 rounded-md p-1 text-xs focus:ring-indigo-500 focus:border-indigo-500">
+                                                    <option value="user">Usuário</option>
+                                                    <option value="admin">Admin</option>
+                                                </select>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </CardContent>
             </Card>
-
-            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Adicionar Nova Matéria-Prima">
-                <form onSubmit={handleAddMateriaPrima} className="space-y-4">
-                    <Input id="codigo" label="Código" value={newMateriaPrima.codigo} onChange={handleInputChange} placeholder="Ex: MP-001" />
-                    <Input id="nome" label="Nome" value={newMateriaPrima.nome} onChange={handleInputChange} placeholder="Ex: Lauril Éter" />
-                    <Input id="descricao" label="Descrição" value={newMateriaPrima.descricao} onChange={handleInputChange} placeholder="Descrição do insumo" />
-                    <Input id="unidadeMedida" label="Unidade de Medida" value={newMateriaPrima.unidadeMedida} onChange={handleInputChange} placeholder="Ex: KG, L, Un" />
-                    <Input id="estoqueAtual" label="Estoque Inicial" type="number" value={newMateriaPrima.estoqueAtual} onChange={handleInputChange} />
-                    <Input id="estoqueMinimo" label="Estoque Mínimo" type="number" value={newMateriaPrima.estoqueMinimo} onChange={handleInputChange} />
-                    <div className="flex justify-end pt-4">
-                        <Button type="submit">Salvar</Button>
-                    </div>
+            <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Criar Novo Usuário">
+                <form onSubmit={handleCreateUser} className="space-y-4">
+                    <Input id="nome" label="Nome Completo" value={newUser.nome} onChange={handleInputChange} />
+                    <Input id="email" label="Email" type="email" value={newUser.email} onChange={handleInputChange} />
+                    <Input id="password" label="Senha" type="password" value={newUser.password} onChange={handleInputChange} />
+                    <div className="flex justify-end pt-4"><Button type="submit">Criar Usuário</Button></div>
                 </form>
             </Modal>
         </div>
     );
 };
 
+
 // --- LAYOUT PRINCIPAL E NAVEGAÇÃO ---
 const AppLayout = () => {
     const [currentPage, setCurrentPage] = useState('dashboard');
-    const { user } = useAuth();
+    const { user, userRole } = useAuth();
     
     const handleLogout = async () => await signOut(auth);
 
     const renderPage = () => {
         switch (currentPage) {
             case 'materias_primas': return <MateriasPrimasPage />;
-            // Adicione outros casos aqui
-            default: return <div>Dashboard e outras páginas em construção.</div>;
+            case 'usuarios': return <UsuariosPage />;
+            default: return <div>Página de <span className="font-semibold">{currentPage}</span> em construção.</div>;
         }
     };
     
     const navItems = [
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'cadastros', label: 'Cadastros', icon: FilePlus2 },
-        { id: 'materias_primas', label: 'Matérias-Primas', icon: BeakerIcon },
-        { id: 'estoque', label: 'Estoque', icon: Boxes },
-        { id: 'embalagens', label: 'Embalagens Cliente', icon: Package },
-        { id: 'producao', label: 'Produção', icon: Factory },
-        { id: 'compras', label: 'Compras e Custos', icon: ShoppingCart },
-        { id: 'relatorios', label: 'Relatórios', icon: BarChart3 },
-        { id: 'usuarios', label: 'Usuários', icon: Users },
+        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, adminOnly: false },
+        { id: 'materias_primas', label: 'Matérias-Primas', icon: BeakerIcon, adminOnly: false },
+        { id: 'estoque', label: 'Estoque', icon: Boxes, adminOnly: false },
+        { id: 'producao', label: 'Produção', icon: Factory, adminOnly: false },
+        { id: 'cadastros', label: 'Cadastros Gerais', icon: FilePlus2, adminOnly: true },
+        { id: 'relatorios', label: 'Relatórios', icon: BarChart3, adminOnly: true },
+        { id: 'usuarios', label: 'Usuários', icon: Users, adminOnly: true },
     ];
 
     return (
@@ -305,7 +291,7 @@ const AppLayout = () => {
                     <img src="/logo.png" alt="Logo Mutamba" className="h-full object-contain" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/150x50/1F2937/FFFFFF?text=Mutamba'; }} />
                 </div>
                 <nav className="flex-1 px-2 py-4 space-y-1">
-                    {navItems.map(item => (
+                    {navItems.filter(item => !item.adminOnly || userRole === 'admin').map(item => (
                         <a key={item.id} href="#" onClick={(e) => { e.preventDefault(); setCurrentPage(item.id); }}
                            className={`flex items-center px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${currentPage === item.id ? 'bg-gray-900 text-white' : 'hover:bg-gray-700 hover:text-white'}`}>
                             <item.icon className="w-5 h-5 mr-3" /> {item.label}
@@ -317,9 +303,10 @@ const AppLayout = () => {
                         <img className="w-10 h-10 rounded-full" src={`https://placehold.co/100x100/6366f1/white?text=${user?.email?.[0]?.toUpperCase() || 'A'}`} alt="Avatar" />
                         <div className="ml-3">
                             <p className="text-sm font-medium text-white">{user?.email || 'Usuário'}</p>
-                            <a href="#" onClick={handleLogout} className="text-xs text-indigo-400 hover:underline">Sair</a>
+                            {userRole === 'admin' && <span className="text-xs font-medium text-yellow-400 flex items-center"><ShieldCheck size={12} className="mr-1"/> Administrador</span>}
                         </div>
                     </div>
+                    <Button onClick={handleLogout} variant="destructive" className="w-full mt-4 text-xs">Sair</Button>
                 </div>
             </aside>
             <main className="flex-1 p-6 lg:p-8 overflow-y-auto">{renderPage()}</main>

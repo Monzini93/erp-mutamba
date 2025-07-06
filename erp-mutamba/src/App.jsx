@@ -330,6 +330,3 @@ const Root = () => {
     const { user, loading } = useAuth();
     if (loading) return <div className="flex items-center justify-center h-screen bg-gray-900"><p className="text-white">Carregando...</p></div>;
     return user ? <AppLayout /> : <LoginPage />;
-};
-// --- EXPORTAÇÃO DO COMPONENTE PRINCIPAL ---
-export { App, AuthProvider, useAuth, LoginPage, MateriasPrimasPage, UsuariosPage, AppLayout, Card, CardContent, Button, Input, Modal }; 
